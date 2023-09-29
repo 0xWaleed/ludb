@@ -28,30 +28,12 @@ local function memory_driver()
 	return o
 end
 
-local g_driver = memory_driver()
-
-function ludb_set_driver(driver)
-	g_driver = driver
-end
-
 local function split(str, delimiter)
 	local result = {}
 	for match in (str .. delimiter):gmatch("(.-)" .. delimiter) do
 		table.insert(result, match)
 	end
 	return result
-end
-
-function clear_all()
-	g_driver.clear()
-end
-
-local function build_path(keys)
-	local out = {}
-	for _, item in ipairs(keys) do
-		table.insert(out, item)
-	end
-	return table.concat(out, KEY_DELIMITER)
 end
 
 local function table_contains(tbl, element)
@@ -67,57 +49,14 @@ local function table_contains(tbl, element)
 	return false
 end
 
-function ludb_save(id, item)
-	id           = build_path({ 'root', id })
-	keys         = split(id, KEY_DELIMITER)
-	keysFromRoot = {}
-	local parent
-	for _, key in ipairs(keys) do
-
-		table.insert(keysFromRoot, key)
-
-		local fullPathKey = build_path(keysFromRoot)
-
-		current           = g_driver.get(fullPathKey)
-
-		if not current then
-			current = { nested_keys = {} }
-		end
-
-		if parent then
-			if not parent.nested_keys then
-				parent.nested_keys = {}
-			end
-
-			if parent.nested_keys and not table_contains(parent.nested_keys, key) then
-				table.insert(parent.nested_keys, key)
-				g_driver.set(parentKey, parent)
-			end
-		end
-
-		parent    = current
-		parentKey = fullPathKey
-	end
-
-	local inItem      = { value = item }
-
-	local storageItem = g_driver.get(id)
-
-	if storageItem then
-		inItem.nested_keys = storageItem.nested_keys
-	end
-
-	g_driver.set(id, inItem)
-end
-
-local function retrieve_nested(id)
+local function retrieve_nested(instance, id)
 	id         = id:gsub('%/%*', '')
 
-	local item = g_driver.get(id)
+	local item = instance._driver.get(id)
 	if item and type(item) == 'table' and item.nested_keys and #item.nested_keys > 0 then
 		local out = {}
 		for _, k in ipairs(item.nested_keys) do
-			local value = retrieve_nested(('%s/%s'):format(id, k))
+			local value = retrieve_nested(instance, ('%s/%s'):format(id, k))
 			out[k]      = value
 		end
 
@@ -133,53 +72,130 @@ local function retrieve_nested(id)
 	end
 end
 
-function ludb_retrieve(id)
+local function internal_delete_all(instance, id)
+
+end
+
+local ludbMT   = {}
+ludbMT.__index = ludbMT
+
+function ludb_new(prefix)
+	local o   = {}
+	o._driver = memory_driver()
+	o._prefix = prefix
+	return setmetatable(o, ludbMT)
+end
+
+function ludbMT:_buildPath(keys)
+	local out = {}
+	if self._prefix then
+		table.insert(out, self._prefix)
+	end
+
+	for _, item in ipairs(keys) do
+		table.insert(out, item)
+	end
+	return table.concat(out, KEY_DELIMITER)
+end
+
+function ludbMT:setDriver(driver)
+	self._driver = driver
+end
+
+function ludbMT:clearAll()
+	self._driver.clear()
+end
+
+function ludbMT:save(id, item)
+	id           = self:_buildPath({ 'root', id })
+	keys         = split(id, KEY_DELIMITER)
+	keysFromRoot = {}
+	local parent
+	for _, key in ipairs(keys) do
+
+		table.insert(keysFromRoot, key)
+
+		local fullPathKey = self:_buildPath(keysFromRoot)
+
+		current           = self._driver.get(fullPathKey)
+
+		if not current then
+			current = { nested_keys = {} }
+		end
+
+		if parent then
+			if not parent.nested_keys then
+				parent.nested_keys = {}
+			end
+
+			if parent.nested_keys and not table_contains(parent.nested_keys, key) then
+				table.insert(parent.nested_keys, key)
+				self._driver.set(parentKey, parent)
+			end
+		end
+
+		parent    = current
+		parentKey = fullPathKey
+	end
+
+	local inItem      = { value = item }
+
+	local storageItem = self._driver.get(id)
+
+	if storageItem then
+		inItem.nested_keys = storageItem.nested_keys
+	end
+
+	self._driver.set(id, inItem)
+end
+
+function ludbMT:retrieve(id)
 	if id == '*' then
 		id = 'root'
 	else
-		id = build_path({ 'root', id })
+		id = self:_buildPath({ 'root', id })
 	end
 
 	if id:find('%/%*') or id == 'root' then
-		return retrieve_nested(id)
+		return retrieve_nested(self, id)
 	end
 
-	local item = g_driver.get(id)
+	local item = self._driver.get(id)
 
 	if item then
 		return item
 	end
 end
 
-function ludb_delete(id)
-	id = build_path({ 'root', id })
-	g_driver.delete(id)
-end
-
-function internal_delete_all(id)
-	local items = g_driver.get(id)
+function ludbMT:_internalDeleteAll(id)
+	local items = self._driver.get(id)
 	if not items then
 		return
 	end
 	if not items.nested_keys then
-		g_driver.delete(id)
+		self._driver.delete(id)
 		return
 	end
 
 	for _, k in ipairs(items.nested_keys) do
-		local fullKey = build_path({ id, k })
-		internal_delete_all(fullKey)
+		local fullKey = self:_buildPath({ id, k })
+		self:_internalDeleteAll(fullKey)
 	end
-	g_driver.delete(id)
+	self._driver.delete(id)
 end
 
-function ludb_delete_all(id)
+function ludbMT:delete(id)
+	id = self:_buildPath({ 'root', id })
+	self._driver.delete(id)
+end
+
+function ludbMT:deleteAll(id)
 	if id == '*' then
 		id = 'root'
 	else
 		id = id:gsub('%/%*', '')
-		id = build_path({ 'root', id })
+		id = self:_buildPath({ 'root', id })
 	end
 
-	internal_delete_all(id)
+	self:_internalDeleteAll(id)
 end

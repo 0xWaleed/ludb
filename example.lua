@@ -24,21 +24,23 @@ function pretty_print(tbl, indent)
 	end
 end
 
-ludb_save('players/123', "0xwaleed")
-ludb_save('players/123/vehicles', { 'adder', 'bison' })
-ludb_save('players/123/garages', { 'garage-1', 'garage-2' })
-ludb_save('players/123/garages/standard', { 'garage-2' })
-ludb_save('players/123/garages/premium', { 'garage-1' })
+local l = ludb_new()
 
-ludb_save('players/321', "0xwal")
-ludb_save('players/321/vehicles', { 'hydra', 'jet' })
-ludb_save('players/321/garages', { 'garage-1', 'garage-2', 'garage-3' })
-ludb_save('players/321/garages/standard', { 'garage-2' })
-ludb_save('players/321/garages/premium', { 'garage-1', 'garage-3' })
+l:save('players/123', "0xwaleed")
+l:save('players/123/vehicles', { 'adder', 'bison' })
+l:save('players/123/garages', { 'garage-1', 'garage-2' })
+l:save('players/123/garages/standard', { 'garage-2' })
+l:save('players/123/garages/premium', { 'garage-1' })
 
-ludb_save('players/555', "rawan")
-ludb_save('players/555/vehicles', { 'impala', 'jet' })
-ludb_save('players/555/garages', { 'garage-1' })
-ludb_save('players/555/garages/premium', { 'garage-1' })
+l:save('players/321', "0xwal")
+l:save('players/321/vehicles', { 'hydra', 'jet' })
+l:save('players/321/garages', { 'garage-1', 'garage-2', 'garage-3' })
+l:save('players/321/garages/standard', { 'garage-2' })
+l:save('players/321/garages/premium', { 'garage-1', 'garage-3' })
 
-pretty_print(ludb_retrieve('players/321'))
+l:save('players/555', "rawan")
+l:save('players/555/vehicles', { 'impala', 'jet' })
+l:save('players/555/garages', { 'garage-1' })
+l:save('players/555/garages/premium', { 'garage-1' })
+
+pretty_print(l:retrieve('players/321/*'))
