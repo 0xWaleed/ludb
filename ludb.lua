@@ -72,10 +72,6 @@ local function retrieve_nested(instance, id)
 	end
 end
 
-local function internal_delete_all(instance, id)
-
-end
-
 local ludbMT   = {}
 ludbMT.__index = ludbMT
 
