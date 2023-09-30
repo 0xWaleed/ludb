@@ -159,7 +159,7 @@ function ludbMT:retrieve(id)
 	local item = self._driver.get(id)
 
 	if item then
-		return item
+		return item.value
 	end
 end
 

@@ -52,22 +52,22 @@ describe('l', function()
 
 	it('can save and retrieve basic number', function()
 		l:save('x', 5)
-		assert.equals(5, l:retrieve('x').value)
+		assert.equals(5, l:retrieve('x'))
 	end)
 
 	it('can save and retrieve basic string', function()
 		l:save('x', 'value')
-		assert.equals('value', l:retrieve('x').value)
+		assert.equals('value', l:retrieve('x'))
 	end)
 
 	it('can save and retrieve basic table', function()
 		l:save('x', { name = "waleed" })
-		assert.same({ name = "waleed" }, l:retrieve('x').value)
+		assert.same({ name = "waleed" }, l:retrieve('x'))
 	end)
 
 	it('can save and retrieve basic number with nested key', function()
 		l:save('items/x', 5)
-		assert.equals(5, l:retrieve('items/x').value)
+		assert.equals(5, l:retrieve('items/x'))
 		assert.same({ x = { value = 5 } }, l:retrieve('items/*'))
 	end)
 
@@ -82,7 +82,7 @@ describe('l', function()
 		l1:save('key', 5)
 		l2:save('key', 3)
 		assert.is_not_nil(l2:retrieve('key'))
-		assert.not_equals(l1:retrieve('key').value, l2:retrieve('key').value)
+		assert.not_equals(l1:retrieve('key'), l2:retrieve('key'))
 	end)
 
 	it('two instances with same prefix share same values', function()
@@ -97,7 +97,7 @@ describe('l', function()
 		l2:save('key', 3)
 
 		assert.is_not_nil(l2:retrieve('key'))
-		assert.equals(l1:retrieve('key').value, l2:retrieve('key').value)
+		assert.equals(l1:retrieve('key'), l2:retrieve('key'))
 	end)
 
 	it('can save and retrieve multiple nested 1', function()
@@ -106,8 +106,8 @@ describe('l', function()
 
 		assert.is_table(l:retrieve('players/123/vehicles/12'))
 		assert.is_table(l:retrieve('players/123/vehicles/34'))
-		assert.is_same({ color = 1 }, l:retrieve('players/123/vehicles/12').value)
-		assert.is_same({ color = 2 }, l:retrieve('players/123/vehicles/34').value)
+		assert.is_same({ color = 1 }, l:retrieve('players/123/vehicles/12'))
+		assert.is_same({ color = 2 }, l:retrieve('players/123/vehicles/34'))
 
 		local expected = {
 			['12'] = {
@@ -126,8 +126,8 @@ describe('l', function()
 
 		assert.is_table(l:retrieve('players/123/vehicles/12'))
 		assert.is_table(l:retrieve('players/345/vehicles/34'))
-		assert.is_same({ value = { color = 1 } }, l:retrieve('players/123/vehicles/12'))
-		assert.is_same({ value = { color = 2 } }, l:retrieve('players/345/vehicles/34'))
+		assert.is_same({ color = 1 }, l:retrieve('players/123/vehicles/12'))
+		assert.is_same({ color = 2 }, l:retrieve('players/345/vehicles/34'))
 
 		assert.is_same({
 			['12'] = { value = { color = 1 } }
@@ -184,8 +184,8 @@ describe('l', function()
 		l:save('players/123', 55)
 		local items = l:retrieve('players/*')
 		assert.same({ ['123'] = { value = 55 } }, items)
-		assert.same({ value = 55 }, l:retrieve('players/123'))
-		assert.same({ value = 55 }, l:retrieve('players/123'))
+		assert.same(55, l:retrieve('players/123'))
+		assert.same(55, l:retrieve('players/123'))
 	end)
 
 	it('should return nil when retrieving with *', function()
@@ -258,7 +258,7 @@ describe('l', function()
 		l:save('players/123/a', 77)
 		l:delete('players/123')
 		assert.is_nil(l:retrieve('players/123'))
-		assert.equals(77, l:retrieve('players/123/a').value)
+		assert.equals(77, l:retrieve('players/123/a'))
 	end)
 
 	it('can delete all', function()

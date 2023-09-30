@@ -44,3 +44,5 @@ l:save('players/555/garages', { 'garage-1' })
 l:save('players/555/garages/premium', { 'garage-1' })
 
 pretty_print(l:retrieve('players/321/*'))
+print('----')
+pretty_print(l:retrieve('players/321/vehicles'))
